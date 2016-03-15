@@ -84,4 +84,14 @@ const di = {
   }
 };
 
-export default di.compose;
+export default di.compose({
+  staticProperties: di,
+
+  initializers: [function (options, {stamp}) {
+    const impl = assign({}, stamp.compose.staticProperties, options);
+    return function compose(...composables) {
+      const descriptor = [this].concat(composables).reduce(impl.mergeComposable.bind(impl), {});
+      return impl.createStamp(descriptor, compose);
+    };
+  }]
+})();
