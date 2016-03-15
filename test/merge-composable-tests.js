@@ -10,4 +10,4 @@ const compose = MakeCompose({mergeComposable: function (dstDescriptor, srcDescri
 
 compose().compose();
 
-assert.equal(descriptorMergeCounter, 1);
+assert.equal(descriptorMergeCounter, 2);
