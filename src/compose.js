@@ -11,68 +11,77 @@ const merge = (dst, src) => mergeWith(dst, src, (dstValue, srcValue) => {
   }
 });
 
-function createFactory(descriptor) {
-  return function Stamp(options, ...args) {
-    let obj = Object.create(descriptor.methods || {});
+const di = {
+  assign: assign,
 
-    merge(obj, descriptor.deepProperties);
-    assign(obj, descriptor.properties);
-    Object.defineProperties(obj, descriptor.propertyDescriptors || {});
+  merge: merge,
 
-    if (!descriptor.initializers || descriptor.initializers.length === 0) return obj;
+  createFactory: function createFactory(descriptor) {
+    const self = this;
+    return function Stamp(options, ...args) {
+      let obj = Object.create(descriptor.methods || {});
 
-    return descriptor.initializers.reduce((resultingObj, initializer) => {
-      const returnedValue = initializer.call(resultingObj, options,
-        {instance: resultingObj, stamp: Stamp, args: [options].concat(args)});
-      return returnedValue === undefined ? resultingObj : returnedValue;
-    }, obj);
-  };
-}
+      self.merge(obj, descriptor.deepProperties);
+      self.assign(obj, descriptor.properties);
+      Object.defineProperties(obj, descriptor.propertyDescriptors || {});
 
-function createStamp(descriptor, composeFunction) {
-  const Stamp = createFactory(descriptor);
+      if (!descriptor.initializers || descriptor.initializers.length === 0) return obj;
 
-  merge(Stamp, descriptor.staticDeepProperties);
-  assign(Stamp, descriptor.staticProperties);
-  Object.defineProperties(Stamp, descriptor.staticPropertyDescriptors || {});
+      return descriptor.initializers.reduce((resultingObj, initializer) => {
+        const returnedValue = initializer.call(resultingObj, options,
+          {instance: resultingObj, stamp: Stamp, args: [options].concat(args)});
+        return returnedValue === undefined ? resultingObj : returnedValue;
+      }, obj);
+    };
+  },
 
-  const composeImplementation = isFunction(Stamp.compose) ? Stamp.compose : composeFunction;
-  Stamp.compose = function () {
-    return composeImplementation.apply(this, arguments);
-  };
-  assign(Stamp.compose, descriptor);
+  createStamp: function createStamp(descriptor, composeFunction) {
+    const Stamp = this.createFactory(descriptor);
 
-  return Stamp;
-}
+    this.merge(Stamp, descriptor.staticDeepProperties);
+    this.assign(Stamp, descriptor.staticProperties);
+    Object.defineProperties(Stamp, descriptor.staticPropertyDescriptors || {});
 
-function mergeComposable(dstDescriptor, srcComposable) {
-  const srcDescriptor = (srcComposable && srcComposable.compose) || srcComposable;
-  if (!isDescriptor(srcDescriptor)) return dstDescriptor;
+    const composeImplementation = isFunction(Stamp.compose) ? Stamp.compose : composeFunction;
+    Stamp.compose = function () {
+      return composeImplementation.apply(this, arguments);
+    };
+    this.assign(Stamp.compose, descriptor);
 
-  const combineProperty = (propName, action) => {
-    if (!isObject(srcDescriptor[propName])) return;
-    if (!isObject(dstDescriptor[propName])) dstDescriptor[propName] = {};
-    action(dstDescriptor[propName], srcDescriptor[propName]);
-  };
+    return Stamp;
+  },
 
-  combineProperty('methods', assign);
-  combineProperty('properties', assign);
-  combineProperty('deepProperties', merge);
-  combineProperty('propertyDescriptors', assign);
-  combineProperty('staticProperties', assign);
-  combineProperty('staticDeepProperties', merge);
-  combineProperty('staticPropertyDescriptors', assign);
-  combineProperty('configuration', assign);
-  combineProperty('deepConfiguration', merge);
-  if (Array.isArray(srcDescriptor.initializers)) {
-    if (!Array.isArray(dstDescriptor.initializers)) dstDescriptor.initializers = [];
-    dstDescriptor.initializers.push.apply(dstDescriptor.initializers, srcDescriptor.initializers.filter(isFunction));
+  mergeComposable: function mergeComposable(dstDescriptor, srcComposable) {
+    const srcDescriptor = (srcComposable && srcComposable.compose) || srcComposable;
+    if (!isDescriptor(srcDescriptor)) return dstDescriptor;
+
+    const combineProperty = (propName, action) => {
+      if (!isObject(srcDescriptor[propName])) return;
+      if (!isObject(dstDescriptor[propName])) dstDescriptor[propName] = {};
+      action.call(this, dstDescriptor[propName], srcDescriptor[propName]);
+    };
+
+    combineProperty('methods', this.assign);
+    combineProperty('properties', this.assign);
+    combineProperty('deepProperties', this.merge);
+    combineProperty('propertyDescriptors', this.assign);
+    combineProperty('staticProperties', this.assign);
+    combineProperty('staticDeepProperties', this.merge);
+    combineProperty('staticPropertyDescriptors', this.assign);
+    combineProperty('configuration', this.assign);
+    combineProperty('deepConfiguration', this.merge);
+    if (Array.isArray(srcDescriptor.initializers)) {
+      if (!Array.isArray(dstDescriptor.initializers)) dstDescriptor.initializers = [];
+      dstDescriptor.initializers.push.apply(dstDescriptor.initializers, srcDescriptor.initializers.filter(isFunction));
+    }
+
+    return dstDescriptor;
+  },
+
+  compose: function compose(...composables) {
+    const descriptor = [this].concat(composables).reduce(di.mergeComposable.bind(di), {});
+    return di.createStamp(descriptor, compose);
   }
+};
 
-  return dstDescriptor;
-}
-
-export default function compose(...composables) {
-  const descriptor = [this].concat(composables).reduce(mergeComposable, {});
-  return createStamp(descriptor, compose);
-}
+export default di.compose;
