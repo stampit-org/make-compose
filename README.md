@@ -13,3 +13,15 @@ $ npm i make-compose
 import MakeCompose from 'make-compose';
 const compose = MakeCompose(options);
 ```
+
+## API
+
+```js
+import MakeCompose from 'make-compose';
+const mergeComposable = {MakeCompose};
+let descriptorMergeCounter = 0;
+const compose = MakeCompose({mergeComposable: function (dstDescriptor, srcDescriptor) {
+  console.log(++descriptorMergeCounter);
+  return mergeComposable(dstDescriptor, srcDescriptor);
+}});
+```

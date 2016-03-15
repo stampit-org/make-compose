@@ -1,4 +1,4 @@
-var MakeCompose = require('..');
-var checkCompose = require('check-compose');
-
-checkCompose(MakeCompose());
+require('require-all')({
+  dirname: __dirname,
+  filter: /.+-tests\.js$/
+});
