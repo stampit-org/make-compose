@@ -84,7 +84,7 @@ const di = {
   }
 };
 
-export default di.compose({
+module.exports = di.compose({
   staticProperties: di,
 
   initializers: [function (options, {stamp}) {
@@ -94,4 +94,4 @@ export default di.compose({
       return impl.createStamp(descriptor, compose);
     };
   }]
-})();
+});
