@@ -7,7 +7,7 @@
     "build": "babel -s -d build src",
     "lint": "eslint src/ bin/",
     "test": "node test",
-    "prepublish": "npm run lint && npm run test && npm run build"
+    "prepublish": "npm run lint && npm run build && npm run test"
   },
   "repository": {
     "type": "git",

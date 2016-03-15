@@ -58,7 +58,7 @@ const di = {
     const combineProperty = (propName, action) => {
       if (!isObject(srcDescriptor[propName])) return;
       if (!isObject(dstDescriptor[propName])) dstDescriptor[propName] = {};
-      action.call(this, dstDescriptor[propName], srcDescriptor[propName]);
+      action(dstDescriptor[propName], srcDescriptor[propName]);
     };
 
     combineProperty('methods', this.assign);
