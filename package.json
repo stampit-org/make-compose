@@ -1,6 +1,6 @@
 {
   "name": "make-compose",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Hackable implementation of the 'compose' specification",
   "main": "build/index.js",
   "scripts": {
