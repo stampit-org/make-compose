@@ -1,12 +1,14 @@
 {
   "name": "make-compose",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Hackable implementation of the 'compose' specification",
   "main": "build/index.js",
   "scripts": {
-    "build": "babel -s -d build src",
     "lint": "eslint src/ bin/",
-    "test": "node test",
+    "test": "npm run test:unit && npm run test:func",
+    "test:func": "babel-node test/func | tap-min",
+    "test:unit": "babel-node test/unit",
+    "build": "babel -s -d build src",
     "prepublish": "npm run lint && npm run build && npm run test"
   },
   "repository": {
@@ -35,7 +37,8 @@
     "babel-register": "^6.7.2",
     "check-compose": "^1.0.1",
     "eslint": "~2.2.0",
-    "require-all": "^2.0.0"
+    "require-all": "^2.0.0",
+    "tap-min": "^1.1.0"
   },
   "dependencies": {
     "lodash": "^4.5.1"

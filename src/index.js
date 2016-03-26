@@ -4,6 +4,7 @@ import isFunction from 'lodash/isFunction';
 import isObject from 'lodash/isObject';
 
 const isDescriptor = isObject;
+const isComposable = isObject;
 const merge = (dst, src) => mergeWith(dst, src, (dstValue, srcValue) => {
   if (Array.isArray(dstValue)) {
     if (Array.isArray(srcValue)) return dstValue.concat(srcValue);
@@ -11,15 +12,22 @@ const merge = (dst, src) => mergeWith(dst, src, (dstValue, srcValue) => {
   }
 });
 
+// Default implementations
 const di = {
+  isDescriptor: isDescriptor,
+
+  isComposable: isComposable,
+
   assign: assign,
 
   merge: merge,
 
+  createObject: Object.create,
+
   createFactory: function createFactory(descriptor) {
     const self = this;
     return function Stamp(options, ...args) {
-      let obj = Object.create(descriptor.methods || {});
+      let obj = (self || di).createObject(descriptor.methods || {});
 
       (self || di).merge(obj, descriptor.deepProperties);
       (self || di).assign(obj, descriptor.properties);
@@ -36,7 +44,7 @@ const di = {
   },
 
   createStamp: function createStamp(descriptor, composeFunction) {
-    const Stamp = this.createFactory(descriptor);
+    const Stamp = (this || di).createFactory(descriptor);
 
     (this || di).merge(Stamp, descriptor.staticDeepProperties);
     (this || di).assign(Stamp, descriptor.staticProperties);
@@ -53,7 +61,7 @@ const di = {
 
   mergeComposable: function mergeComposable(dstDescriptor, srcComposable) {
     const srcDescriptor = (srcComposable && srcComposable.compose) || srcComposable;
-    if (!isDescriptor(srcDescriptor)) return dstDescriptor;
+    if (!(this || di).isDescriptor(srcDescriptor)) return dstDescriptor;
 
     const combineProperty = (propName, action) => {
       if (!isObject(srcDescriptor[propName])) return;
@@ -76,22 +84,13 @@ const di = {
     }
 
     return dstDescriptor;
-  },
-
-  compose: function compose(...composables) {
-    const descriptor = [this].concat(composables).reduce(di.mergeComposable.bind(di), {});
-    return di.createStamp(descriptor, compose);
   }
 };
 
-module.exports = di.compose({
-  staticProperties: di,
-
-  initializers: [function (options, {stamp}) {
-    const impl = assign({}, stamp.compose.staticProperties, options);
-    return function compose(...composables) {
-      const descriptor = [this].concat(composables).reduce(impl.mergeComposable.bind(impl), {});
-      return impl.createStamp(descriptor, compose);
-    };
-  }]
-});
+module.exports = assign(function (options) {
+  const impl = assign({}, di, options);
+  return function compose(...composables) {
+    const descriptor = [this].concat(composables).filter(impl.isComposable).reduce(impl.mergeComposable.bind(impl), {});
+    return impl.createStamp(descriptor, compose);
+  };
+}, di);
