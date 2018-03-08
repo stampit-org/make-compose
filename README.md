@@ -1,3 +1,8 @@
+# WARNING!
+This proejct is obsolete. It was substituted with the [composers](https://medium.com/@koresar/fun-with-stamps-episode-11-interfering-composition-7abc44ac1f99) introduced in [stamp specification v1.5](https://github.com/stampit-org/stamp-specification/releases/tag/v1.5.1).
+
+This repository will be archived in early 2018.
+
 # make-compose
 Hackable implementation of the ['compose' specification](https://github.com/stampit-org/stamp-specification)
 
